@@ -49,12 +49,21 @@ export default function UserManagement() {
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    const { email, full_name, role_code } = newUser
+
+    const trimmedEmail = newUser.email.trim()
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!emailPattern.test(trimmedEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    const { full_name, role_code } = newUser
     const tempPassword = Math.random().toString(36).slice(-8)
     const nextUkey = `GMS${String(users.length + 1).padStart(3, '0')}`
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
+      email: trimmedEmail,
       password: tempPassword,
       options: {
         data: { ukey: nextUkey, full_name: full_name }
@@ -73,11 +82,13 @@ export default function UserManagement() {
 
     const { error: insertError } = await supabase
       .from('users')
-      .insert([{ 
+      .insert([{
         ukey: nextUkey,
-        email,
+        email: trimmedEmail,
+        google_email: null,
         full_name,
         role_code,
+        setup_complete: false,
       }])
 
     if (insertError) {
