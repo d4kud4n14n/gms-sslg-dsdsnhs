@@ -28,40 +28,39 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-2">Reset Password</h1>
-        <p className="text-gray-600 text-center mb-6">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+      <div className="gms-panel w-full max-w-md p-7 sm:p-8">
+        <div className="mb-6 text-center">
+          <p className="text-xs uppercase tracking-[0.28em] text-brand-600">Account Recovery</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Reset Password</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Enter your email and we will send a secure reset link.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2"
+              className="gms-input"
               placeholder="you@gmail.com"
               required
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {message && <p className="text-green-500 text-sm">{message}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          {message && <p className="text-sm text-emerald-600">{message}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="gms-button-primary w-full">
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link to="/login" className="text-blue-600 hover:underline text-sm">
+        <div className="mt-5 text-center">
+          <Link to="/login" className="text-sm font-medium text-brand-600 transition hover:text-brand-500">
             Back to Login
           </Link>
         </div>

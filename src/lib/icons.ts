@@ -14,6 +14,8 @@ export {
   Search,
   Menu,
   MoreVertical,
+  PanelLeftClose,
+  PanelRightOpen,
   ChevronRight,
   ChevronLeft,
   Home,

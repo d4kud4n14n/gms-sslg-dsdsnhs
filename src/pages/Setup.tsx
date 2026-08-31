@@ -130,35 +130,46 @@ export default function Setup() {
     setSuccess('A confirmation email has been sent to your new email address.')
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (loading) return (
+    <div className="gms-shell flex min-h-screen items-center justify-center p-6">
+      <div className="gms-panel flex items-center gap-3 px-5 py-4 text-sm font-medium text-slate-600">
+        <svg className="h-5 w-5 animate-spin text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        Loading account setup...
+      </div>
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+      <div className="gms-panel w-full max-w-md p-7 sm:p-8">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Complete Your Account Setup</h1>
-          <p className="mt-2 text-sm text-slate-300">
-            Bind your personal Gmail and set a permanent password.
+          <p className="text-xs uppercase tracking-[0.28em] text-brand-600">Account Setup</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Complete Your Profile</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Add your personal email and set a permanent password.
           </p>
         </div>
 
         {showConfirmation ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
+            <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
               <p>A confirmation email has been sent to <strong>{email}</strong>.</p>
               <p className="mt-1">Please click the link in that email to verify your address.</p>
               <div className="mt-4 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={resendConfirmation}
-                  className="text-left text-blue-300 hover:underline"
+                  className="text-left font-medium text-brand-700 hover:underline"
                 >
                   {resent ? 'Resent ✓' : 'Resend confirmation email'}
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/dashboard')}
-                  className="text-left text-blue-300 hover:underline"
+                  className="text-left font-medium text-brand-700 hover:underline"
                 >
                   Continue to dashboard (you can confirm later)
                 </button>
@@ -168,49 +179,49 @@ export default function Setup() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">New Email (Gmail)</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">New Email (Gmail)</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+                className="gms-input"
                 placeholder="yourname@gmail.com"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">New Password</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">New Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+                className="gms-input"
                 placeholder="At least 8 characters"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">Confirm Password</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Confirm Password</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+                className="gms-input"
                 placeholder="Re-enter password"
                 required
               />
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-600">
                 {success}
               </div>
             )}
@@ -218,7 +229,7 @@ export default function Setup() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="gms-button-primary w-full"
             >
               {submitting ? 'Saving...' : 'Complete Setup'}
             </button>

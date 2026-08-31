@@ -1,75 +1,120 @@
-# React + TypeScript + Vite
+# GMS - Governance Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + TypeScript + Vite application for the Supreme Secondary Learner Government (SSLG) governance platform. The project follows a UKEY-first identity model and role-based access structure for school governance workflows.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This app is designed around real governance operations for student leadership, including:
 
-## React Compiler
+- UKEY-based authentication and identity handling
+- role-aware dashboard access
+- meetings and governance tracking
+- workspace membership and admin management
+- setup and onboarding for first-time users
+- password reset and email confirmation flows
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- React
+- TypeScript
+- Vite
+- Supabase
+- React Router
+- Tailwind CSS
+- Lucide React
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Core Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Login using UKEY lookup and Supabase Auth
+- First-time account setup flow
+- Password reset and email confirmation support
+- Governance dashboard with summary metrics and recent activity
+- Meetings management page
+- SYSVER/admin management surfaces
+- User and workspace management components
+- Role-aware dashboard insights and action panels
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Project Structure
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+  components/
+    Dashboard/
+    Icon.tsx
+    Layout.tsx
+    UserManagement.tsx
+    WorkspaceManagement.tsx
+    WorkspaceMembers.tsx
+  lib/
+    auth.ts
+    icons.ts
+    supabase.ts
+  pages/
+    Dashboard.tsx
+    ForgotPassword.tsx
+    Login.tsx
+    MeetingDetail.tsx
+    Meetings.tsx
+    ResetPassword.tsx
+    Setup.tsx
+    SYSVER.tsx
+  App.tsx
+  main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Local Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Install dependencies
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
+
+2. Create a local environment file if needed
+
+```bash
+cp .env.example .env
+```
+
+3. Add your Supabase credentials
+
+```env
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
+
+4. Start the app
+
+```bash
+npm run dev
+```
+
+5. Build for production
+
+```bash
+npm run build
+```
+
+## Authentication and Identity Model
+
+The application is designed around the following assumptions:
+
+- UKEY is the primary identity source
+- User records are stored in the public `users` table
+- Access and views are role-based, not email-only
+- `setup_complete` and related onboarding metadata are part of the user lifecycle
+
+## Governance Workflow Notes
+
+This is a production-oriented prototype for school governance operations and is intentionally designed to be practical, low-cost, and easy to maintain.
+
+## Important Notes
+
+- The frontend is currently aligned with a governance-first dashboard model.
+- Some live Supabase schema and auth policy setup may still be required for full end-to-end onboarding in a production database.
+- Password reset and email confirmation redirect URLs should be configured in the Supabase project settings.
+
+## Status
+
+The app currently includes the main governance shell, authentication flow, dashboard, admin surfaces, meetings, and onboarding/update routes for a UKEY-based student governance system.
+

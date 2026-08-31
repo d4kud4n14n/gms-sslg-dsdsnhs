@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Layout from '../components/Layout'
 
 interface Meeting {
   id: string
@@ -238,41 +239,40 @@ export default function MeetingDetail() {
     return { present, total }
   }
 
-  if (loading) return <div className="p-6">Loading...</div>
-  if (error) return <div className="p-6 text-red-500">Error: {error}</div>
-  if (!meeting) return <div className="p-6">Meeting not found.</div>
+  if (loading) return <Layout><div className="gms-panel p-6 text-slate-600">Loading...</div></Layout>
+  if (error) return <Layout><div className="gms-panel p-6 text-red-600">Error: {error}</div></Layout>
+  if (!meeting) return <Layout><div className="gms-panel p-6 text-slate-600">Meeting not found.</div></Layout>
 
   const { present, total } = getAttendanceCount()
   const quorumMet = present >= (meeting.quorum_required || 1)
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white shadow p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-600">{meeting.title}</h1>
-        <div className="flex items-center gap-4">
-          <a href="/meetings" className="text-gray-600 hover:underline">← Back to Meetings</a>
-          <button
-            onClick={async () => { await supabase.auth.signOut(); navigate('/login') }}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="bg-white rounded shadow p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Layout>
+      <div className="space-y-6">
+        <div className="gms-panel p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm text-gray-500">Scheduled</p>
-              <p className="font-medium">{new Date(meeting.scheduled_at).toLocaleString()}</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-brand-600">Meeting Details</p>
+              <h1 className="mt-2 text-2xl font-bold text-slate-900">{meeting.title}</h1>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Status</p>
+            <button type="button" onClick={() => navigate('/meetings')} className="gms-button-secondary">
+              ← Back to Meetings
+            </button>
+          </div>
+        </div>
+
+        <div className="gms-panel p-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Scheduled</p>
+              <p className="mt-2 text-base font-semibold text-slate-800">{new Date(meeting.scheduled_at).toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
               <select
                 value={meeting.status}
                 onChange={(e) => updateMeetingStatus(e.target.value)}
-                className="border rounded px-2 py-1"
+                className="gms-input mt-2"
               >
                 <option value="scheduled">Scheduled</option>
                 <option value="in_progress">In Progress</option>
@@ -280,73 +280,81 @@ export default function MeetingDetail() {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Quorum</p>
-              <p className={`font-medium ${quorumMet ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Quorum</p>
+              <p className={`mt-2 text-base font-semibold ${quorumMet ? 'text-emerald-600' : 'text-red-600'}`}>
                 {present}/{meeting.quorum_required || 1} present {quorumMet ? '✅ Quorum met' : '❌ Quorum not met'}
               </p>
             </div>
           </div>
 
           {meeting.agenda && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">Agenda</p>
-              <p className="whitespace-pre-wrap">{meeting.agenda}</p>
+            <div className="mt-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Agenda</p>
+              <p className="mt-2 whitespace-pre-wrap text-slate-700">{meeting.agenda}</p>
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Attendance ({present}/{total})</h2>
+        <div className="gms-panel p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Attendance ({present}/{total})</h2>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{present} present</span>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {users.map((user) => {
                   const att = attendance.find((a) => a.user_ukey === user.ukey)
                   const status = att?.status || 'absent'
 
                   return (
                     <tr key={user.ukey}>
-                      <td className="px-4 py-2">{user.full_name}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-3 text-sm font-medium text-slate-700">{user.full_name}</td>
+                      <td className="px-4 py-3">
                         <span
-                          className={`inline-block px-2 py-1 rounded text-xs ${
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${
                             status === 'present'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-emerald-100 text-emerald-700'
                               : status === 'excused'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-slate-200 text-slate-700'
                           }`}
                         >
                           {status}
                         </span>
                       </td>
-                      <td className="px-4 py-2">
-                        <button
-                          onClick={() => toggleAttendance(user.ukey, 'present')}
-                          className={`px-2 py-1 rounded text-xs mr-1 ${status === 'present' ? 'bg-green-200' : 'bg-gray-200 hover:bg-green-100'}`}
-                        >
-                          Present
-                        </button>
-                        <button
-                          onClick={() => toggleAttendance(user.ukey, 'excused')}
-                          className={`px-2 py-1 rounded text-xs mr-1 ${status === 'excused' ? 'bg-yellow-200' : 'bg-gray-200 hover:bg-yellow-100'}`}
-                        >
-                          Excused
-                        </button>
-                        <button
-                          onClick={() => toggleAttendance(user.ukey, 'absent')}
-                          className={`px-2 py-1 rounded text-xs ${status === 'absent' ? 'bg-gray-300' : 'bg-gray-200 hover:bg-gray-300'}`}
-                        >
-                          Absent
-                        </button>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendance(user.ukey, 'present')}
+                            className={`rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${status === 'present' ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-700 hover:bg-emerald-100'}`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendance(user.ukey, 'excused')}
+                            className={`rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${status === 'excused' ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-700 hover:bg-amber-100'}`}
+                          >
+                            Excused
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendance(user.ukey, 'absent')}
+                            className={`rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${status === 'absent' ? 'bg-slate-300 text-slate-800' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+                          >
+                            Absent
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -356,77 +364,80 @@ export default function MeetingDetail() {
           </div>
         </div>
 
-        <div className="bg-white rounded shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Minutes</h2>
+        <div className="gms-panel p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Minutes</h2>
+            {!editingMinutes && (
+              <button type="button" onClick={() => setEditingMinutes(true)} className="gms-button-secondary">
+                {meeting.minutes ? 'Edit Minutes' : 'Add Minutes'}
+              </button>
+            )}
+          </div>
+
           {editingMinutes ? (
             <div>
               <textarea
                 value={minutesText}
                 onChange={(e) => setMinutesText(e.target.value)}
-                className="w-full border rounded p-2 min-h-[150px]"
+                className="gms-input min-h-[160px]"
                 placeholder="Enter minutes..."
               />
-              <div className="mt-2 flex gap-2">
-                <button onClick={updateMinutes} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              <div className="mt-4 flex gap-2">
+                <button type="button" onClick={updateMinutes} className="gms-button-primary">
                   Save Minutes
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setEditingMinutes(false); setMinutesText(meeting.minutes || '') }}
-                  className="border px-4 py-2 rounded hover:bg-gray-100"
+                  className="gms-button-secondary"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <div>
-              <p className="whitespace-pre-wrap">{meeting.minutes || 'No minutes recorded yet.'}</p>
-              <button onClick={() => setEditingMinutes(true)} className="mt-2 text-blue-600 hover:underline">
-                {meeting.minutes ? 'Edit Minutes' : 'Add Minutes'}
-              </button>
-            </div>
+            <p className="whitespace-pre-wrap text-slate-700">{meeting.minutes || 'No minutes recorded yet.'}</p>
           )}
         </div>
 
-        <div className="bg-white rounded shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Resolutions</h2>
-            <button
-              onClick={() => setShowResolutionModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
+        <div className="gms-panel p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Resolutions</h2>
+            <button type="button" onClick={() => setShowResolutionModal(true)} className="gms-button-primary">
               + Propose Resolution
             </button>
           </div>
 
           {resolutions.length === 0 ? (
-            <p className="text-gray-500">No resolutions proposed for this meeting.</p>
+            <p className="text-sm text-slate-500">No resolutions proposed for this meeting.</p>
           ) : (
             <div className="space-y-4">
               {resolutions.map((res) => (
-                <div key={res.id} className="border rounded p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold">{res.title}</h3>
-                      <p className="text-sm text-gray-600">{res.description}</p>
-                      <p className="text-xs text-gray-500">
+                <div key={res.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="space-y-2">
+                      <h3 className="text-base font-semibold text-slate-900">{res.title}</h3>
+                      <p className="text-sm text-slate-600">{res.description}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
                         Proposed by: {users.find((u) => u.ukey === res.proposed_by)?.full_name || res.proposed_by}
                       </p>
-                      <p className="text-xs text-gray-500">Status: {res.status}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Status: {res.status}</p>
+                      <p className="text-xs text-slate-500">
                         For: {res.votes_for} | Against: {res.votes_against} | Abstain: {res.votes_abstain}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={() => updateResolutionStatus(res.id, 'approved')}
-                        className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs hover:bg-green-200"
+                        className="rounded-md bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 hover:bg-emerald-200"
                       >
                         Approve
                       </button>
                       <button
+                        type="button"
                         onClick={() => updateResolutionStatus(res.id, 'rejected')}
-                        className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs hover:bg-red-200"
+                        className="rounded-md bg-red-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-700 hover:bg-red-200"
                       >
                         Reject
                       </button>
@@ -440,45 +451,38 @@ export default function MeetingDetail() {
       </div>
 
       {showResolutionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Propose Resolution</h2>
-            <form onSubmit={createResolution}>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Title *</label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="gms-panel w-full max-w-xl p-6">
+            <h2 className="mb-4 text-xl font-bold text-slate-900">Propose Resolution</h2>
+            <form onSubmit={createResolution} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Title *</label>
                 <input
                   type="text"
                   value={newResolution.title}
                   onChange={(e) => setNewResolution({ ...newResolution, title: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input"
                   required
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Description</label>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Description</label>
                 <textarea
                   value={newResolution.description}
                   onChange={(e) => setNewResolution({ ...newResolution, description: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input min-h-[110px]"
                   rows={3}
                 />
               </div>
 
-              {resolutionError && <p className="text-red-500 text-sm">{resolutionError}</p>}
+              {resolutionError && <p className="text-sm text-red-600">{resolutionError}</p>}
 
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowResolutionModal(false)}
-                  className="px-4 py-2 border rounded hover:bg-gray-100"
-                >
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowResolutionModal(false)} className="gms-button-secondary">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
+                <button type="submit" className="gms-button-primary">
                   Propose
                 </button>
               </div>
@@ -486,6 +490,6 @@ export default function MeetingDetail() {
           </div>
         </div>
       )}
-    </div>
+    </Layout>
   )
 }

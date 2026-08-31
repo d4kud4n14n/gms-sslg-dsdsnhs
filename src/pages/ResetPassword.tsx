@@ -52,45 +52,42 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-2">Set New Password</h1>
-        <p className="text-gray-600 text-center mb-6">
-          Enter your new password below.
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+      <div className="gms-panel w-full max-w-md p-7 sm:p-8">
+        <div className="mb-6 text-center">
+          <p className="text-xs uppercase tracking-[0.28em] text-brand-600">Security</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Set New Password</h1>
+          <p className="mt-2 text-sm text-slate-600">Choose a strong password to continue securely.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">New Password</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">New Password</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2"
+              className="gms-input"
               placeholder="••••••••"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Confirm Password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2"
+              className="gms-input"
               placeholder="••••••••"
               required
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {message && <p className="text-green-500 text-sm">{message}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          {message && <p className="text-sm text-emerald-600">{message}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="gms-button-primary w-full">
             {loading ? 'Updating...' : 'Update Password'}
           </button>
         </form>

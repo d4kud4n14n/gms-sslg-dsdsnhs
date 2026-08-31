@@ -88,20 +88,25 @@ export default function Dashboard() {
 
   return (
     <Layout userName={profile?.full_name || 'Officer'} userCode={profile?.ukey || 'GMS000'}>
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-800">
-            Welcome back, {profile?.full_name || 'Officer'}!
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {profile?.role_code || 'Member'} • UKEY: {profile?.ukey || 'N/A'}
-          </p>
+      <div className="space-y-5">
+        <div className="gms-panel p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-brand-600">Overview</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-800">
+                Welcome back, {profile?.full_name || 'Officer'}.
+              </h2>
+            </div>
+            <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+              {profile?.role_code || 'Member'} • {profile?.ukey || 'N/A'}
+            </div>
+          </div>
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-3">
-          <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
-              <Icon name="Users" size={24} className="h-6 w-6" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="gms-panel flex items-center gap-4 p-4">
+            <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600">
+              <Icon name="Users" size={22} className="h-5 w-5" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-800">{workspaceCount}</p>
@@ -109,49 +114,47 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="rounded-lg bg-green-50 p-2 text-green-600">
-              <Icon name="Calendar" size={24} className="h-6 w-6" />
+          <div className="gms-panel flex items-center gap-4 p-4">
+            <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
+              <Icon name="Calendar" size={22} className="h-5 w-5" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-800">{upcomingMeetings.length}</p>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400">Upcoming Meetings</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400">Meetings</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
-              <Icon name="FileText" size={24} className="h-6 w-6" />
+          <div className="gms-panel flex items-center gap-4 p-4">
+            <div className="rounded-xl bg-amber-50 p-2.5 text-amber-600">
+              <Icon name="FileText" size={22} className="h-5 w-5" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-800">{recentResolutions.length}</p>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400">Recent Resolutions</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400">Resolutions</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-slate-500">
-            Recent Activity
-          </h3>
+        <div className="gms-panel p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-500">
+              Recent Activity
+            </h3>
+            <span className="text-xs text-slate-400">Latest updates</span>
+          </div>
 
           {upcomingMeetings.length === 0 && recentResolutions.length === 0 ? (
             <p className="text-sm text-slate-400">No recent activity.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {upcomingMeetings.map((meeting) => (
-                <div
-                  key={meeting.id}
-                  className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0"
-                >
+                <div key={meeting.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
                   <div>
                     <p className="font-medium text-slate-700">{meeting.title}</p>
-                    <p className="text-xs text-slate-400">
-                      {new Date(meeting.scheduled_at).toLocaleDateString()}
-                    </p>
+                    <p className="text-xs text-slate-400">{new Date(meeting.scheduled_at).toLocaleDateString()}</p>
                   </div>
                   <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-medium ${
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
                       meeting.status === 'scheduled'
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-amber-100 text-amber-700'
@@ -163,18 +166,18 @@ export default function Dashboard() {
               ))}
 
               {recentResolutions.map((resolution) => (
-                <div
-                  key={resolution.id}
-                  className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0"
-                >
-                  <p className="font-medium text-slate-700">{resolution.title}</p>
+                <div key={resolution.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
+                  <div>
+                    <p className="font-medium text-slate-700">{resolution.title}</p>
+                    <p className="text-xs text-slate-400">{resolution.created_at ? new Date(resolution.created_at).toLocaleDateString() : 'Recent'}</p>
+                  </div>
                   <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-medium ${
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
                       resolution.status === 'approved'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-emerald-100 text-emerald-700'
                         : resolution.status === 'rejected'
                           ? 'bg-red-100 text-red-700'
-                          : 'bg-slate-100 text-slate-700'
+                          : 'bg-slate-200 text-slate-700'
                     }`}
                   >
                     {resolution.status}

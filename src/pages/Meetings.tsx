@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Layout from '../components/Layout'
 
 interface Meeting {
   id: string
@@ -73,136 +74,143 @@ export default function Meetings() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading meetings...</div>
+  if (loading) return <Layout><div className="gms-panel p-6 text-slate-600">Loading meetings...</div></Layout>
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white shadow p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-600">Plenary Meetings</h1>
-        <div className="flex items-center gap-4">
-          <a href="/dashboard" className="text-gray-600 hover:underline">Dashboard</a>
-          <button
-            onClick={async () => { await supabase.auth.signOut(); navigate('/login') }}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">All Meetings</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            + Schedule Meeting
-          </button>
+    <Layout>
+      <div className="space-y-6">
+        <div className="gms-panel p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-brand-600">Governance</p>
+              <h1 className="mt-2 text-2xl font-bold text-slate-900">Plenary Meetings</h1>
+            </div>
+            <button type="button" onClick={() => setShowModal(true)} className="gms-button-primary">
+              + Schedule Meeting
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {meetings.length === 0 ? (
-            <p className="text-gray-500">No meetings scheduled yet.</p>
-          ) : (
-            meetings.map((meeting) => (
-              <div key={meeting.id} className="bg-white p-4 rounded shadow">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg">{meeting.title}</h3>
-                    <p className="text-gray-600 text-sm">{meeting.agenda || 'No agenda set'}</p>
-                    <p className="text-gray-500 text-sm">
-                      Scheduled: {new Date(meeting.scheduled_at).toLocaleString()}
-                    </p>
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs mt-1 ${
-                        meeting.status === 'scheduled'
-                          ? 'bg-blue-100 text-blue-800'
-                          : meeting.status === 'in_progress'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : meeting.status === 'adjourned'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="gms-panel p-4">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Total</p>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{meetings.length}</p>
+          </div>
+          <div className="gms-panel p-4">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Scheduled</p>
+            <p className="mt-3 text-3xl font-bold text-blue-700">{meetings.filter((m) => m.status === 'scheduled').length}</p>
+          </div>
+          <div className="gms-panel p-4">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">In progress</p>
+            <p className="mt-3 text-3xl font-bold text-amber-600">{meetings.filter((m) => m.status === 'in_progress').length}</p>
+          </div>
+        </div>
+
+        <div className="gms-panel p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">All Meetings</h2>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{meetings.length} total</span>
+          </div>
+
+          <div className="space-y-4">
+            {meetings.length === 0 ? (
+              <p className="text-sm text-slate-500">No meetings scheduled yet.</p>
+            ) : (
+              meetings.map((meeting) => (
+                <div key={meeting.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-slate-900">{meeting.title}</h3>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                            meeting.status === 'scheduled'
+                              ? 'bg-blue-100 text-blue-700'
+                              : meeting.status === 'in_progress'
+                                ? 'bg-amber-100 text-amber-700'
+                                : meeting.status === 'adjourned'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {meeting.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600">{meeting.agenda || 'No agenda set'}</p>
+                      <p className="text-sm text-slate-500">
+                        Scheduled: {new Date(meeting.scheduled_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/meetings/${meeting.id}`)}
+                      className="gms-button-secondary"
                     >
-                      {meeting.status}
-                    </span>
+                      View Details
+                    </button>
                   </div>
-                  <button
-                    onClick={() => navigate(`/meetings/${meeting.id}`)}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    View Details
-                  </button>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Schedule Meeting</h2>
-            <form onSubmit={createMeeting}>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Title *</label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="gms-panel w-full max-w-xl p-6">
+            <h2 className="mb-4 text-xl font-bold text-slate-900">Schedule Meeting</h2>
+            <form onSubmit={createMeeting} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Title *</label>
                 <input
                   type="text"
                   value={newMeeting.title}
                   onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input"
                   required
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Agenda</label>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Agenda</label>
                 <textarea
                   value={newMeeting.agenda}
                   onChange={(e) => setNewMeeting({ ...newMeeting, agenda: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input min-h-[110px]"
                   rows={3}
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Date & Time *</label>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Date & Time *</label>
                 <input
                   type="datetime-local"
                   value={newMeeting.scheduled_at}
                   onChange={(e) => setNewMeeting({ ...newMeeting, scheduled_at: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input"
                   required
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Quorum Required</label>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Quorum Required</label>
                 <input
                   type="number"
                   value={newMeeting.quorum_required}
                   onChange={(e) => setNewMeeting({ ...newMeeting, quorum_required: Number(e.target.value) || 1 })}
-                  className="w-full border rounded px-3 py-2"
+                  className="gms-input"
                   min="1"
                 />
               </div>
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded hover:bg-gray-100"
-                >
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="gms-button-secondary">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
+                <button type="submit" className="gms-button-primary">
                   Create Meeting
                 </button>
               </div>
@@ -210,6 +218,6 @@ export default function Meetings() {
           </div>
         </div>
       )}
-    </div>
+    </Layout>
   )
 }
