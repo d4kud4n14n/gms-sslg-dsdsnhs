@@ -41,7 +41,7 @@ export default function SYSVER() {
         return
       }
 
-      if (data?.role_code === 'SYSTEM_ADMIN') {
+      if (data?.role_code === 'ADMIN') {
         setIsAdmin(true)
       } else {
         navigate('/dashboard')

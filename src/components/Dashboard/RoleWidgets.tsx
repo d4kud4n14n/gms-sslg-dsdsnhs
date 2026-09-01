@@ -5,21 +5,17 @@ interface RoleWidgetsProps {
 }
 
 const roleTitles: Record<string, string> = {
-  SYSTEM_ADMIN: 'System Administration',
-  SCHOOL_HEAD: 'School Leadership',
+  ADMIN: 'System Administration',
+  PRINCIPAL: 'School Leadership',
   ADVISER: 'Advisory Review',
-  PRESIDENT: 'Executive Oversight',
-  VICE_PRESIDENT: 'Leadership Coordination',
-  SECRETARY: 'Minutes & Documentation',
-  TREASURER: 'Treasury Summary',
-  AUDITOR: 'Audit Review',
-  GRADE_REP: 'Student Representation',
+  OFFICER: 'Leadership Coordination',
+  STAFF: 'General Membership',
 }
 
 export default function RoleWidgets({ roleCode, meetings, resolutions }: RoleWidgetsProps) {
-  const normalizedRole = roleCode || 'MEMBER'
+  const normalizedRole = roleCode || 'STAFF'
 
-  if (normalizedRole === 'TREASURER' || normalizedRole === 'AUDITOR') {
+  if (normalizedRole === 'ADMIN') {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -36,7 +32,7 @@ export default function RoleWidgets({ roleCode, meetings, resolutions }: RoleWid
     )
   }
 
-  if (normalizedRole === 'SECRETARY') {
+  if (normalizedRole === 'OFFICER') {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900">Recent Minutes</h3>
@@ -61,7 +57,7 @@ export default function RoleWidgets({ roleCode, meetings, resolutions }: RoleWid
     )
   }
 
-  if (normalizedRole === 'PRESIDENT' || normalizedRole === 'SCHOOL_HEAD' || normalizedRole === 'ADVISER') {
+  if (normalizedRole === 'ADMIN' || normalizedRole === 'PRINCIPAL' || normalizedRole === 'ADVISER') {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -80,7 +76,7 @@ export default function RoleWidgets({ roleCode, meetings, resolutions }: RoleWid
     )
   }
 
-  if (normalizedRole === 'GRADE_REP') {
+  if (normalizedRole === 'STAFF') {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-sm font-medium text-slate-500">Announcements</p>

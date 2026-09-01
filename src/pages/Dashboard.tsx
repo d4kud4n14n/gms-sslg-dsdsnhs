@@ -8,6 +8,8 @@ interface UserProfile {
   full_name: string
   email: string
   role_code: string
+  position?: string | null
+  designation?: string | null
 }
 
 interface Meeting {
@@ -42,7 +44,7 @@ export default function Dashboard() {
 
         const { data: profileData } = await supabase
           .from('users')
-          .select('ukey, full_name, email, role_code')
+          .select('ukey, full_name, email, role_code, position, designation')
           .eq('ukey', ukey)
           .single()
 
@@ -98,7 +100,7 @@ export default function Dashboard() {
               </h2>
             </div>
             <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
-              {profile?.role_code || 'Member'} • {profile?.ukey || 'N/A'}
+              {profile?.position || profile?.role_code || 'Staff Member'} • {profile?.ukey || 'N/A'}
             </div>
           </div>
         </div>
