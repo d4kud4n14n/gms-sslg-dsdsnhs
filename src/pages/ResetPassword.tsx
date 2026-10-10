@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { z } from 'zod'
 import { supabase } from '../lib/supabase'
+import { passwordSchema } from '../lib/profile'
+
+const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Please confirm your new password.'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  })
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -26,25 +38,26 @@ export default function ResetPassword() {
     setError('')
     setMessage('')
 
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.')
+    const validation = resetPasswordSchema.safeParse({
+      password: newPassword,
+      confirmPassword,
+    })
+
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Please check your password entries.')
       return
     }
 
     setLoading(true)
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: validation.data.password,
     })
 
-    if (error) {
-      setError(error.message)
+    if (updateError) {
+      setError(updateError.message)
     } else {
-      setMessage('Password updated successfully!')
+      setMessage('Password updated successfully! Redirecting to login...')
       setTimeout(() => navigate('/login'), 2000)
     }
 
@@ -68,7 +81,7 @@ export default function ResetPassword() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="gms-input"
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
               required
             />
           </div>
@@ -79,7 +92,7 @@ export default function ResetPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="gms-input"
-              placeholder="••••••••"
+              placeholder="Re-enter password"
               required
             />
           </div>

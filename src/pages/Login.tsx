@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Eye, EyeOff, User, Lock, LogIn, Users } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, LogIn, Users } from 'lucide-react'
 import logo from '../assets/logo-sslg.png'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [ukey, setUkey] = useState('')
+  const [imail, setImail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -17,51 +17,27 @@ export default function Login() {
     setLoading(true)
     setError('')
 
-    const normalizedUkey = ukey.trim().toUpperCase()
+    const normalizedImail = imail.trim().toLowerCase()
 
-    const { data, error: fetchError } = await supabase
-      .from('users')
-      .select('email, setup_complete')
-      .eq('ukey', normalizedUkey)
-      .maybeSingle()
-
-    if (fetchError) {
-      setError('Unable to validate your UKEY right now.')
-      setLoading(false)
-      return
-    }
-
-    if (!data) {
-      setError('UKEY not found. Please check your UKEY.')
-      setLoading(false)
-      return
-    }
-
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: normalizedImail,
       password,
     })
 
-    if (error) {
-      setError(error.message)
+    if (authError || !authData.user) {
+      // Prevent identity enumeration with a unified generic message
+      setError('Invalid email or password.')
       setLoading(false)
       return
     }
 
-    const signedInUkey = authData.user?.user_metadata?.ukey || normalizedUkey
-    const { data: profileData, error: profileError } = await supabase
-      .from('users')
-      .select('setup_complete')
-      .eq('ukey', signedInUkey)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('setup_completed_at, status')
+      .eq('id', authData.user.id)
       .maybeSingle()
 
-    if (profileError) {
-      setError('Your account could not be verified. Please contact an admin.')
-      setLoading(false)
-      return
-    }
-
-    if (profileData && profileData.setup_complete === false) {
+    if (!profile || !profile.setup_completed_at || profile.status === 'pending') {
       navigate('/setup')
       return
     }
@@ -104,17 +80,17 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">UKEY</label>
+              <label className="mb-2 block text-sm font-medium text-slate-200">Institutional Email (IMAIL)</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                  <User className="h-4 w-4 text-slate-400" />
+                  <Mail className="h-4 w-4 text-slate-400" />
                 </div>
                 <input
-                  type="text"
-                  value={ukey}
-                  onChange={(e) => setUkey(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 text-sm text-white placeholder:text-slate-400 focus:border-brand-400 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-brand-500/20 uppercase"
-                  placeholder="e.g., GMS000"
+                  type="email"
+                  value={imail}
+                  onChange={(e) => setImail(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 text-sm text-white placeholder:text-slate-400 focus:border-brand-400 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-brand-500/20 lowercase"
+                  placeholder="e.g., officer@sslg.gms"
                   required
                 />
               </div>

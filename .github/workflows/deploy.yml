@@ -1,0 +1,32 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gms-sslg-dsdsnhs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: gms-sslg-dsdsnhs
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: gms-sslg-dsdsnhs/.nvmrc
+          cache: npm
+          cache-dependency-path: gms-sslg-dsdsnhs/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=gms-sslg-dsdsnhs
+          workingDirectory: gms-sslg-dsdsnhs

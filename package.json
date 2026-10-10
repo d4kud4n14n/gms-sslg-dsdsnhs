@@ -7,14 +7,19 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "index": "node scripts/gms-index.mjs",
+    "guard": "node scripts/gms-guard.mjs",
+    "guard:ci": "node scripts/gms-guard.mjs --ci --no-color",
+    "prepare": "node scripts/gms-index.mjs --install-hooks"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
     "lucide-react": "^1.37.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3"
+    "react-router-dom": "^7.18.3",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

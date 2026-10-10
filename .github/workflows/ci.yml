@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gms-sslg-dsdsnhs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: gms-sslg-dsdsnhs
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: gms-sslg-dsdsnhs/.nvmrc
+          cache: npm
+          cache-dependency-path: gms-sslg-dsdsnhs/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

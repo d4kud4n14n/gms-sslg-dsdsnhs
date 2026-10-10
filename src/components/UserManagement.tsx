@@ -11,12 +11,19 @@ interface User {
   created_at: string
 }
 
+interface CreatedCredentials {
+  ukey: string
+  tempPassword: string
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [createdCredentials, setCreatedCredentials] = useState<CreatedCredentials | null>(null)
+  const [copiedField, setCopiedField] = useState<'ukey' | 'password' | null>(null)
   const [newUser, setNewUser] = useState({
     email: '',
     full_name: '',
@@ -59,6 +66,28 @@ export default function UserManagement() {
       alert('Failed to update role: ' + error.message)
     } else {
       setUsers(users.map(u => u.ukey === ukey ? { ...u, role_code: newRole } : u))
+    }
+  }
+
+  const copyCredential = async (value: string, field: 'ukey' | 'password') => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+      } else {
+        const input = document.createElement('input')
+        input.value = value
+        input.setAttribute('readonly', '')
+        input.style.position = 'fixed'
+        input.style.opacity = '0'
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+      }
+      setCopiedField(field)
+      window.setTimeout(() => setCopiedField(null), 1600)
+    } catch {
+      setError('Unable to copy this credential. Please copy it manually.')
     }
   }
 
@@ -111,7 +140,11 @@ export default function UserManagement() {
       await fetchUsers()
       setShowModal(false)
       setNewUser({ email: '', full_name: '', role_code: 'STAFF', position: '', designation: '' })
-      alert(`User created. UKEY: ${result.ukey}\nTemporary password: ${result.tempPassword}`)
+      if (result.ukey && result.tempPassword) {
+        setCreatedCredentials({ ukey: result.ukey, tempPassword: result.tempPassword })
+      } else {
+        setError('User was created, but the credentials were not returned by the server.')
+      }
     } catch (createError) {
       const message = createError instanceof Error ? createError.message : 'Unable to reach the user creation service.'
       setError(message)
@@ -426,6 +459,59 @@ export default function UserManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {createdCredentials && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/40 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-created-title"
+            className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <span className="text-lg font-bold" aria-hidden="true">✓</span>
+              </div>
+              <div>
+                <h2 id="user-created-title" className="text-lg font-bold text-slate-900">User created successfully!</h2>
+                <p className="mt-1 text-sm text-slate-500">Share these temporary credentials securely with the new user.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {[
+                { label: 'UKEY', value: createdCredentials.ukey, field: 'ukey' as const },
+                { label: 'Temporary password', value: createdCredentials.tempPassword, field: 'password' as const },
+              ].map(({ label, value, field }) => (
+                <div key={field} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyCredential(value, field)}
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+                    >
+                      {copiedField === field ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="break-all font-mono text-sm font-semibold text-slate-800">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCreatedCredentials(null)
+                setCopiedField(null)
+              }}
+              className="mt-5 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

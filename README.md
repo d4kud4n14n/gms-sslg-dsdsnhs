@@ -95,6 +95,22 @@ npm run dev
 npm run build
 ```
 
+## Repository Index
+
+Use the generated repo index before tracing dependencies or change impact.
+
+```bash
+npm run index
+```
+
+Open the HTML report at `.gms-index/index.html` for the visual tree and reverse-map, or read `.gms-index/index.md` for the agent-facing summary.
+
+If you want a faster local pass without traversing Cloudflare Functions, run:
+
+```bash
+node scripts/gms-index.mjs --no-functions
+```
+
 ## Authentication and Identity Model
 
 The application is designed around the following assumptions:
@@ -118,3 +134,34 @@ This is a production-oriented prototype for school governance operations and is 
 
 The app currently includes the main governance shell, authentication flow, dashboard, admin surfaces, meetings, and onboarding/update routes for a UKEY-based student governance system.
 
+## Local Setup
+
+Use Node.js 24 LTS (also pinned in `.nvmrc`) and npm. From the project directory, install the locked dependencies and start the development server:
+
+```bash
+npm ci
+npm run dev
+```
+
+Vite serves the app at `http://localhost:5173` by default.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with values from the Supabase project. Variables prefixed with `VITE_` are public and bundled into the client; never put secrets in them. Non-`VITE_` variables must not be exposed to the client. Configure `SUPABASE_SERVICE_ROLE_KEY` as a Cloudflare Pages Function secret in the Cloudflare dashboard, not in a client-side `.env` file.
+
+## Scripts
+
+- `npm run dev` — start the Vite development server.
+- `npm run lint` — run ESLint.
+- `npm run build` — type-check with `tsc -b` and create the production build in `dist/`.
+- `npm run preview` — preview the production build locally.
+
+## Deployment
+
+Cloudflare Pages deploys the `dist/` directory on pushes to `main`. The GitHub Actions deploy workflow requires the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets; configure both in the repository's GitHub Actions secrets. The Pages project name is `gms-sslg-dsdsnhs`.
+
+The `public/_redirects` file provides SPA fallback for client-side routes. `public/_headers` configures security headers and immutable caching for assets. A Content-Security-Policy is intentionally deferred until it can be tuned for the Supabase auth and development flows.
+
+## Branch Protection
+
+Configure branch protection for `main` in GitHub's repository settings; it is not configured by this repository. Require the CI build check to pass before merging pull requests.

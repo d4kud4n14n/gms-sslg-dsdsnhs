@@ -8,7 +8,6 @@ interface Env {
 interface CreateUserBody {
   email?: string
   user_metadata?: {
-    ukey?: string
     full_name?: string
   }
   role_code?: string
@@ -16,7 +15,7 @@ interface CreateUserBody {
   designation?: string | null
 }
 
-const allowedRoles = new Set(['ADMIN', 'PRINCIPAL', 'ADVISER', 'OFFICER', 'STAFF'])
+const allowedRoles = new Set(['ADMIN', 'PRINCIPAL', 'ADVISER', 'OFFICER', 'STAFF', 'MEMBER'])
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -52,26 +51,27 @@ async function createUserRequest(context: { request: Request; env: Env }) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
+  // 1. Verify caller session
   const { data: authData, error: authLookupError } = await supabaseAdmin.auth.getUser(token)
   if (authLookupError || !authData.user) {
     return json({ success: false, error: 'Your session is invalid or expired.' }, 401)
   }
 
-  const callerUkey = authData.user.user_metadata?.ukey
-  if (!callerUkey) {
-    return json({ success: false, error: 'Your account is missing a UKEY.' }, 403)
-  }
-
-  const { data: caller, error: callerError } = await supabaseAdmin
-    .from('users')
-    .select('role_code')
-    .eq('ukey', callerUkey)
+  // 2. Check admin authorization on profiles + roles
+  const { data: callerProfile, error: callerError } = await supabaseAdmin
+    .from('profiles')
+    .select('role_id, roles:role_id ( name, level )')
+    .eq('id', authData.user.id)
     .maybeSingle()
 
-  if (callerError || caller?.role_code !== 'ADMIN') {
+  const callerRoleLevel = (callerProfile?.roles as { level?: number; name?: string } | null)?.level ?? 0
+  const callerRoleName = (callerProfile?.roles as { level?: number; name?: string } | null)?.name?.toUpperCase() ?? ''
+
+  if (callerError || (callerRoleLevel < 10 && callerRoleName !== 'ADMIN')) {
     return json({ success: false, error: 'Only ADMIN users can create accounts.' }, 403)
   }
 
+  // 3. Parse input body
   let body: CreateUserBody
   try {
     body = await context.request.json() as CreateUserBody
@@ -79,63 +79,69 @@ async function createUserRequest(context: { request: Request; env: Env }) {
     return json({ success: false, error: 'Request body must be valid JSON.' }, 400)
   }
 
-  const email = body.email?.trim().toLowerCase()
+  const imail = body.email?.trim().toLowerCase()
   const fullName = body.user_metadata?.full_name?.trim()
-  const roleCode = body.role_code?.trim().toUpperCase()
-  const position = body.position?.trim()
+  const roleCode = body.role_code?.trim().toUpperCase() || 'MEMBER'
+  const position = body.position?.trim() || 'Member'
   const designation = body.designation?.trim() || null
 
-  if (!email || !email.includes('@') || !fullName || !position || !roleCode || !allowedRoles.has(roleCode)) {
-    return json({ success: false, error: 'Email, full name, role, and position are required.' }, 400)
+  if (!imail || !imail.includes('@') || !fullName || !allowedRoles.has(roleCode)) {
+    return json({ success: false, error: 'Valid IMAIL, full name, and valid role are required.' }, 400)
   }
 
-  const { data: latestUsers, error: latestUsersError } = await supabaseAdmin
-    .from('users')
-    .select('ukey')
-    .like('ukey', 'GMS%')
-    .order('ukey', { ascending: false })
-    .limit(1)
-
-  if (latestUsersError) {
-    return json({ success: false, error: latestUsersError.message }, 500)
-  }
-
-  const latestNumber = Number(latestUsers?.[0]?.ukey?.replace(/^GMS/i, '')) || 0
-  const ukey = `GMS${String(latestNumber + 1).padStart(3, '0')}`
   const temporaryPassword = generateTemporaryPassword()
 
+  // 4. Create user in auth.users with email_confirm: true (non-routable IMAIL)
+  // This automatically triggers on_auth_user_created to generate the UKEY and profiles row.
   const { data: createdAuth, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-    email,
+    email: imail,
     password: temporaryPassword,
     email_confirm: true,
-    user_metadata: { ukey, full_name: fullName },
+    user_metadata: {
+      full_name: fullName,
+      position,
+      designation,
+    },
   })
 
   if (createAuthError || !createdAuth.user) {
     const message = createAuthError?.message || 'Unable to create the authentication account.'
     const duplicate = /already registered|already exists|duplicate/i.test(message)
-    return json({ success: false, error: duplicate ? 'That email address is already registered.' : message }, 409)
+    return json({ success: false, error: duplicate ? 'That IMAIL address is already registered.' : message }, 409)
   }
 
-  const { error: profileError } = await supabaseAdmin
-    .from('users')
-    .insert({
-      ukey,
-      email,
-      google_email: null,
-      full_name: fullName,
-      role_code: roleCode,
-      position,
-      designation,
-      setup_complete: false,
-    })
+  // 5. If a non-default role was specified, assign the corresponding role_id
+  if (roleCode !== 'MEMBER') {
+    const { data: targetRole } = await supabaseAdmin
+      .from('roles')
+      .select('id')
+      .ilike('name', roleCode)
+      .maybeSingle()
 
-  if (profileError) {
-    await supabaseAdmin.auth.admin.deleteUser(createdAuth.user.id)
-    return json({ success: false, error: `User profile creation failed: ${profileError.message}` }, 500)
+    if (targetRole) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ role_id: targetRole.id })
+        .eq('id', createdAuth.user.id)
+    }
   }
 
-  return json({ success: true, ukey, tempPassword: temporaryPassword })
+  // 6. Fetch the trigger-generated profile with sequence UKEY
+  const { data: profileRecord, error: profileFetchError } = await supabaseAdmin
+    .from('profiles')
+    .select('ukey')
+    .eq('id', createdAuth.user.id)
+    .single()
+
+  if (profileFetchError || !profileRecord) {
+    return json({ success: false, error: 'User created in auth but profile resolution failed.' }, 500)
+  }
+
+  return json({
+    success: true,
+    ukey: profileRecord.ukey,
+    tempPassword: temporaryPassword,
+  })
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
