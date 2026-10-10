@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import Icon from '../components/Icon'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 
 interface UserProfile {
   ukey: string
@@ -35,7 +35,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {

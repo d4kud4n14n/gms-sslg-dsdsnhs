@@ -133,6 +133,16 @@ export async function completeSetup(input: CompleteSetupInput): Promise<{ data: 
       return { data: null, error: new Error(updateProfileError.message) }
     }
 
+    if (data?.ukey) {
+      await supabase
+        .from('users')
+        .update({
+          google_email: normalizedUmail,
+          setup_complete: true,
+        })
+        .eq('ukey', data.ukey)
+    }
+
     return { data, error: null }
   } catch (err) {
     return { data: null, error: err instanceof Error ? err : new Error('Unexpected error completing setup.') }

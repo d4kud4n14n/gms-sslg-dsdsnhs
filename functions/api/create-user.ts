@@ -121,7 +121,19 @@ async function createUserRequest(context: { request: Request; env: Env }) {
     return json({ success: false, error: duplicate ? 'That IMAIL address is already registered.' : message }, 409)
   }
 
-  // 5. If a non-default role was specified, assign the corresponding role_id
+  // 5. Fetch the trigger-generated profile with sequence UKEY
+  const { data: profileRecord, error: profileFetchError } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('id', createdAuth.user.id)
+    .single()
+
+  if (profileFetchError || !profileRecord) {
+    return json({ success: false, error: 'User created in auth but profile resolution failed.' }, 500)
+  }
+
+  // 6. If a non-default role was specified, assign the corresponding role_id
+  // Replace row via delete+insert so tr_check_profile_update (BEFORE UPDATE trigger checking auth.uid()) does not block service_role
   if (roleCode !== 'MEMBER') {
     const { data: targetRole } = await supabaseAdmin
       .from('roles')
@@ -129,24 +141,30 @@ async function createUserRequest(context: { request: Request; env: Env }) {
       .ilike('name', roleCode)
       .maybeSingle()
 
-    if (targetRole) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ role_id: targetRole.id })
-        .eq('id', createdAuth.user.id)
+    if (targetRole && targetRole.id !== profileRecord.role_id) {
+      await supabaseAdmin.from('profiles').delete().eq('id', createdAuth.user.id)
+      await supabaseAdmin.from('profiles').insert({
+        ...profileRecord,
+        role_id: targetRole.id,
+      })
     }
   }
 
-  // 6. Fetch the trigger-generated profile with sequence UKEY
-  const { data: profileRecord, error: profileFetchError } = await supabaseAdmin
-    .from('profiles')
-    .select('ukey')
-    .eq('id', createdAuth.user.id)
-    .single()
-
-  if (profileFetchError || !profileRecord) {
-    return json({ success: false, error: 'User created in auth but profile resolution failed.' }, 500)
-  }
+  // 7. Ensure backwards-compatible public.users record is populated when users is a table
+  await supabaseAdmin
+    .from('users')
+    .upsert(
+      {
+        ukey: profileRecord.ukey,
+        email: imail,
+        full_name: fullName,
+        role_code: roleCode,
+        position,
+        designation,
+        setup_complete: false,
+      },
+      { onConflict: 'ukey' },
+    )
 
   return json({
     success: true,

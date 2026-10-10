@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 
 interface User {
   ukey: string
@@ -14,6 +14,16 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
   const [error, setError] = useState('')
 
   const fetchData = useCallback(async () => {
+    if (isMockClient) {
+      const mockUsers: User[] = [
+        { ukey: 'GMS000', full_name: 'System Root Administrator', email: 'root@gms.internal' },
+      ]
+      setAllUsers(mockUsers)
+      setMembers(mockUsers)
+      setLoading(false)
+      return
+    }
+
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('ukey, full_name, email')
@@ -48,26 +58,37 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
   }, [fetchData])
 
   const toggleMember = async (userUkey: string, isCurrentlyMember: boolean) => {
+    setError('')
+    if (isMockClient) {
+      if (isCurrentlyMember) {
+        setMembers((prev) => prev.filter((m) => m.ukey !== userUkey))
+      } else {
+        const user = allUsers.find((u) => u.ukey === userUkey)
+        if (user) setMembers((prev) => [...prev, user])
+      }
+      return
+    }
+
     if (isCurrentlyMember) {
-      const { error } = await supabase
+      const { error: removeError } = await supabase
         .from('workspace_members')
         .delete()
         .eq('workspace_id', workspaceId)
         .eq('user_ukey', userUkey)
 
-      if (error) {
-        alert('Failed to remove member: ' + error.message)
+      if (removeError) {
+        setError('Failed to remove member: ' + removeError.message)
         return
       }
 
       setMembers((prev) => prev.filter((m) => m.ukey !== userUkey))
     } else {
-      const { error } = await supabase
+      const { error: addError } = await supabase
         .from('workspace_members')
         .insert([{ workspace_id: workspaceId, user_ukey: userUkey, role_in_workspace: 'member' }])
 
-      if (error) {
-        alert('Failed to add member: ' + error.message)
+      if (addError) {
+        setError('Failed to add member: ' + addError.message)
         return
       }
 

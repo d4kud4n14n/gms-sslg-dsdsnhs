@@ -47,7 +47,7 @@ const toPosix = (value) => String(value ?? '').replace(/\\/g, '/')
 const listFiles = () =>
   {
     try {
-      return [...new Set(execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: repoRoot, encoding: 'utf8' })
+      return [...new Set(execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
         .split('\0')
         .filter(Boolean))]
         .filter((file) => !file.split(/[\\/]/).some((part) => ignoredDirectories.has(part)))
@@ -272,7 +272,7 @@ const renderHtml = (report) => {
 
 const getRepoCommit = () => {
   try {
-    const output = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim()
+    const output = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
     return output || 'unknown'
   } catch {
     return 'unknown'

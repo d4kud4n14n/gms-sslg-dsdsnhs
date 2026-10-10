@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 import { Eye, EyeOff, Mail, Lock, LogIn, Users } from 'lucide-react'
 import logo from '../assets/logo-sslg.png'
 
@@ -18,7 +18,6 @@ export default function Login() {
     setError('')
 
     const normalizedImail = imail.trim().toLowerCase()
-    const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
 
     if (isMockClient && normalizedImail === 'root@gms.internal') {
       if (password === 'RootDev2026!') {

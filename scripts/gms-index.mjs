@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs/promises'
+import fsWatch from 'node:fs'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { spawn } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)

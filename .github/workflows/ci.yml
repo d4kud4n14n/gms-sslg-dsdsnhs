@@ -18,7 +18,7 @@ jobs:
           path: gms-sslg-dsdsnhs
       - uses: actions/setup-node@v4
         with:
-          node-version-file: gms-sslg-dsdsnhs/.nvmrc
+          node-version: '22'
           cache: npm
           cache-dependency-path: gms-sslg-dsdsnhs/package-lock.json
       - run: npm ci

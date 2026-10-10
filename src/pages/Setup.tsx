@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 import { completeSetup, umailSchema, passwordSchema, type Profile } from '../lib/profile'
 
 interface SetupProps {
@@ -32,7 +32,6 @@ export default function Setup({ onSetupComplete }: SetupProps) {
 
   useEffect(() => {
     const verifySetupStatus = async () => {
-      const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
@@ -104,7 +103,6 @@ export default function Setup({ onSetupComplete }: SetupProps) {
 
     setSubmitting(true)
 
-    const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
     if (isMockClient) {
       if (onSetupComplete) {
         onSetupComplete()

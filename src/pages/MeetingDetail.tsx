@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 interface Meeting {
@@ -53,9 +53,40 @@ export default function MeetingDetail() {
   const [showResolutionModal, setShowResolutionModal] = useState(false)
   const [newResolution, setNewResolution] = useState({ title: '', description: '' })
   const [resolutionError, setResolutionError] = useState('')
+  const [actionError, setActionError] = useState('')
   const [currentUserUkey, setCurrentUserUkey] = useState('')
 
   const fetchData = useCallback(async () => {
+    if (isMockClient) {
+      setCurrentUserUkey('GMS000')
+      const mockMeeting: Meeting = {
+        id: id || 'meet-001',
+        title: 'SSLG Regular General Assembly',
+        agenda: 'Review of Quarter 1 Student Projects and Budget Allocation',
+        scheduled_at: new Date(Date.now() + 86400000 * 3).toISOString(),
+        status: 'scheduled',
+        minutes: '',
+        quorum_required: 1,
+        created_by: 'GMS000',
+        created_at: new Date().toISOString(),
+      }
+      setMeeting((current) => current ?? mockMeeting)
+      setUsers([
+        {
+          ukey: 'GMS000',
+          full_name: 'System Root Administrator',
+          email: 'root@gms.internal',
+        },
+      ])
+      setAttendance((current) =>
+        current.length > 0
+          ? current
+          : [{ user_ukey: 'GMS000', status: 'present', attended_at: new Date().toISOString() }],
+      )
+      setLoading(false)
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.user_metadata?.ukey) {
@@ -112,14 +143,20 @@ export default function MeetingDetail() {
 
   const updateMeetingStatus = async (status: string) => {
     if (!meeting) return
+    setActionError('')
 
-    const { error } = await supabase
+    if (isMockClient) {
+      setMeeting({ ...meeting, status })
+      return
+    }
+
+    const { error: statusError } = await supabase
       .from('meetings')
       .update({ status })
       .eq('id', meeting.id)
 
-    if (error) {
-      alert('Failed to update status: ' + error.message)
+    if (statusError) {
+      setActionError('Failed to update status: ' + statusError.message)
     } else {
       setMeeting({ ...meeting, status })
     }
@@ -127,14 +164,21 @@ export default function MeetingDetail() {
 
   const updateMinutes = async () => {
     if (!meeting) return
+    setActionError('')
 
-    const { error } = await supabase
+    if (isMockClient) {
+      setMeeting({ ...meeting, minutes: minutesText })
+      setEditingMinutes(false)
+      return
+    }
+
+    const { error: minutesError } = await supabase
       .from('meetings')
       .update({ minutes: minutesText })
       .eq('id', meeting.id)
 
-    if (error) {
-      alert('Failed to save minutes: ' + error.message)
+    if (minutesError) {
+      setActionError('Failed to save minutes: ' + minutesError.message)
     } else {
       setMeeting({ ...meeting, minutes: minutesText })
       setEditingMinutes(false)
@@ -142,17 +186,40 @@ export default function MeetingDetail() {
   }
 
   const toggleAttendance = async (userUkey: string, status: string) => {
+    setActionError('')
     const existing = attendance.find((a) => a.user_ukey === userUkey)
 
+    if (isMockClient) {
+      if (existing) {
+        setAttendance((prev) =>
+          prev.map((a) =>
+            a.user_ukey === userUkey
+              ? { ...a, status, attended_at: status === 'present' ? new Date().toISOString() : null }
+              : a,
+          ),
+        )
+      } else {
+        setAttendance((prev) => [
+          ...prev,
+          {
+            user_ukey: userUkey,
+            status,
+            attended_at: status === 'present' ? new Date().toISOString() : null,
+          },
+        ])
+      }
+      return
+    }
+
     if (existing) {
-      const { error } = await supabase
+      const { error: attError } = await supabase
         .from('meeting_attendance')
         .update({ status, attended_at: status === 'present' ? new Date().toISOString() : null })
         .eq('meeting_id', id)
         .eq('user_ukey', userUkey)
 
-      if (error) {
-        alert('Failed to update attendance: ' + error.message)
+      if (attError) {
+        setActionError('Failed to update attendance: ' + attError.message)
         return
       }
 
@@ -164,7 +231,7 @@ export default function MeetingDetail() {
         ),
       )
     } else {
-      const { error } = await supabase
+      const { error: attError } = await supabase
         .from('meeting_attendance')
         .insert([
           {
@@ -175,8 +242,8 @@ export default function MeetingDetail() {
           },
         ])
 
-      if (error) {
-        alert('Failed to add attendance: ' + error.message)
+      if (attError) {
+        setActionError('Failed to add attendance: ' + attError.message)
         return
       }
 
@@ -197,7 +264,27 @@ export default function MeetingDetail() {
 
     if (!meeting) return
 
-    const { error } = await supabase
+    if (isMockClient) {
+      setResolutions((prev) => [
+        {
+          id: `res-${Date.now()}`,
+          title: newResolution.title,
+          description: newResolution.description,
+          proposed_by: currentUserUkey || 'GMS000',
+          status: 'proposed',
+          votes_for: 0,
+          votes_against: 0,
+          votes_abstain: 0,
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ])
+      setShowResolutionModal(false)
+      setNewResolution({ title: '', description: '' })
+      return
+    }
+
+    const { error: createError } = await supabase
       .from('resolutions')
       .insert([
         {
@@ -209,8 +296,8 @@ export default function MeetingDetail() {
         },
       ])
 
-    if (error) {
-      setResolutionError(error.message)
+    if (createError) {
+      setResolutionError(createError.message)
     } else {
       fetchData()
       setShowResolutionModal(false)
@@ -219,13 +306,19 @@ export default function MeetingDetail() {
   }
 
   const updateResolutionStatus = async (resolutionId: string, status: string) => {
-    const { error } = await supabase
+    setActionError('')
+    if (isMockClient) {
+      setResolutions((prev) => prev.map((r) => (r.id === resolutionId ? { ...r, status } : r)))
+      return
+    }
+
+    const { error: resUpdateError } = await supabase
       .from('resolutions')
       .update({ status })
       .eq('id', resolutionId)
 
-    if (error) {
-      alert('Failed to update resolution: ' + error.message)
+    if (resUpdateError) {
+      setActionError('Failed to update resolution: ' + resUpdateError.message)
     } else {
       setResolutions((prev) => prev.map((r) => (r.id === resolutionId ? { ...r, status } : r)))
     }
@@ -257,6 +350,11 @@ export default function MeetingDetail() {
               ← Back to Meetings
             </button>
           </div>
+          {actionError && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
         </div>
 
         <div className="gms-panel p-6">

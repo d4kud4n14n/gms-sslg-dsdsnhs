@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from './lib/supabase'
+import { supabase, isMockClient } from './lib/supabase'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
@@ -92,8 +92,6 @@ function App() {
   }
 
   // Route Guard: Protected application routes requiring active setup
-  const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
-
   const requireActive = (element: React.ReactElement) => {
     if (isMockClient) {
       return element

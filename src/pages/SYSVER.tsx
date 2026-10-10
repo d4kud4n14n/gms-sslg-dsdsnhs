@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, isMockClient } from '../lib/supabase'
 import UserManagement from '../components/UserManagement'
 import WorkspaceManagement from '../components/WorkspaceManagement'
 import Layout from '../components/Layout'
@@ -12,7 +12,6 @@ export default function SYSVER() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
