@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 interface User {
@@ -13,13 +13,7 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchData()
-  }, [workspaceId])
-
-  const fetchData = async () => {
-    setLoading(true)
-
+  const fetchData = useCallback(async () => {
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('ukey, full_name, email')
@@ -47,7 +41,11 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
     }
 
     setLoading(false)
-  }
+  }, [workspaceId])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const toggleMember = async (userUkey: string, isCurrentlyMember: boolean) => {
     if (isCurrentlyMember) {

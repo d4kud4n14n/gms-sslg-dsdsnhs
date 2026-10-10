@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 interface Env {
   SUPABASE_URL: string
@@ -8,14 +9,21 @@ interface Env {
   APP_URL?: string
 }
 
-interface RecoverBody {
-  umail?: string
+const recoverBodySchema = z.object({
+  umail: z.string().trim().email(),
+})
+
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
+      ...CORS_HEADERS,
       'Cache-Control': 'no-store',
       'Content-Type': 'application/json',
     },
@@ -63,12 +71,12 @@ async function dispatchRecoveryEmail(
           `,
         }),
       })
-    } catch (err) {
-      console.error('Failed to dispatch recovery email via Resend:', err)
+    } catch {
+      console.error('Outbound mail dispatch failed')
     }
   } else {
-    // In development or when no third-party mailer is configured, log recovery link
-    console.info(`[RECOVERY_DISPATCH] To: ${umail} | Account: ${imail} (${ukey}) | Link: ${recoveryLink}`)
+    // In development or when no third-party mailer is configured
+    console.info('[RECOVERY_DISPATCH] Development recovery link created successfully')
   }
 }
 
@@ -77,19 +85,20 @@ async function handleRecoverUmail(context: { request: Request; env: Env }) {
     return json({ success: false, error: 'Server configuration is incomplete.' }, 500)
   }
 
-  let body: RecoverBody
+  let rawBody: unknown
   try {
-    body = (await context.request.json()) as RecoverBody
+    rawBody = await context.request.json()
   } catch {
     // Return standard generic response even on invalid body to prevent enumeration
     return json(GENERIC_RESPONSE)
   }
 
-  const umail = body.umail?.trim().toLowerCase()
-  if (!umail || !umail.includes('@')) {
-    // Return standard generic response (no enumeration)
+  const parseResult = recoverBodySchema.safeParse(rawBody)
+  if (!parseResult.success) {
     return json(GENERIC_RESPONSE)
   }
+
+  const umail = parseResult.data.umail.toLowerCase()
 
   const supabaseAdmin = createClient(
     context.env.SUPABASE_URL,
@@ -120,7 +129,7 @@ async function handleRecoverUmail(context: { request: Request; env: Env }) {
   })
 
   if (linkError || !linkData?.properties?.action_link) {
-    console.error('Failed to generate recovery link:', linkError)
+    console.error('Action link generation failed')
     return json(GENERIC_RESPONSE)
   }
 
@@ -136,16 +145,26 @@ async function handleRecoverUmail(context: { request: Request; env: Env }) {
   return json(GENERIC_RESPONSE)
 }
 
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  })
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }) {
   try {
     return await handleRecoverUmail(context)
-  } catch (error) {
-    console.error('recover-umail failed:', error)
+  } catch {
+    console.error('Account recovery request failed')
     return json(GENERIC_RESPONSE)
   }
 }
 
 export async function onRequest(context: { request: Request; env: Env }) {
+  if (context.request.method === 'OPTIONS') {
+    return onRequestOptions()
+  }
   if (context.request.method !== 'POST') {
     return json({ success: false, error: 'Method not allowed.' }, 405)
   }

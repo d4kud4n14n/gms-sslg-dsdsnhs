@@ -35,11 +35,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
+      const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) {
+          if (isMockClient) {
+            setProfile({
+              ukey: 'GMS000',
+              full_name: 'System Root Administrator',
+              email: 'root@gms.internal',
+              role_code: 'ROOT',
+              position: 'System Root',
+              designation: 'Lead Technical Administrator',
+            })
+            setLoading(false)
+            return
+          }
+          return
+        }
 
-        const ukey = user.user_metadata?.ukey
+        let ukey = user.user_metadata?.ukey
+        if (!ukey) {
+          const { data: p } = await supabase.from('profiles').select('ukey').eq('id', user.id).maybeSingle()
+          ukey = p?.ukey
+        }
         if (!ukey) return
 
         const { data: profileData } = await supabase

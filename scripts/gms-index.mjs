@@ -593,6 +593,7 @@ async function buildIndex() {
       sqlTables: sqlTablesByName.size,
       routes: routeItems.length,
     },
+    routes: routeItems,
     nodes: nodes.map((node) => ({
       id: node.id,
       kind: node.kind,

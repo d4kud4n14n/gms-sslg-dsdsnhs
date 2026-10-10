@@ -78,9 +78,194 @@ export type Database = {
         }
         Relationships: []
       }
+      workspaces: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          description: string
+          chair_ukey: string | null
+          is_active: boolean
+          config: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          description?: string
+          chair_ukey?: string | null
+          is_active?: boolean
+          config?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          description?: string
+          chair_ukey?: string | null
+          is_active?: boolean
+          config?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_ukey: string
+          role: string
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_ukey: string
+          role?: string
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_ukey?: string
+          role?: string
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_members_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
+            referencedSchema: 'public'
+          }
+        ]
+      }
+      meetings: {
+        Row: {
+          id: string
+          title: string
+          agenda: string
+          scheduled_at: string
+          status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+          minutes: string
+          quorum_required: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          agenda?: string
+          scheduled_at: string
+          status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+          minutes?: string
+          quorum_required?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          agenda?: string
+          scheduled_at?: string
+          status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+          minutes?: string
+          quorum_required?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      meeting_attendance: {
+        Row: {
+          id: string
+          meeting_id: string
+          user_ukey: string
+          status: 'present' | 'absent' | 'excused'
+          signed_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          user_ukey: string
+          status?: 'present' | 'absent' | 'excused'
+          signed_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          user_ukey?: string
+          status?: 'present' | 'absent' | 'excused'
+          signed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'meeting_attendance_meeting_id_fkey'
+            columns: ['meeting_id']
+            isOneToOne: false
+            referencedRelation: 'meetings'
+            referencedSchema: 'public'
+          }
+        ]
+      }
+      resolutions: {
+        Row: {
+          id: string
+          meeting_id: string | null
+          title: string
+          description: string
+          status: 'proposed' | 'approved' | 'rejected' | 'tabled'
+          author_ukey: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id?: string | null
+          title: string
+          description?: string
+          status?: 'proposed' | 'approved' | 'rejected' | 'tabled'
+          author_ukey?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string | null
+          title?: string
+          description?: string
+          status?: 'proposed' | 'approved' | 'rejected' | 'tabled'
+          author_ukey?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'resolutions_meeting_id_fkey'
+            columns: ['meeting_id']
+            isOneToOne: false
+            referencedRelation: 'meetings'
+            referencedSchema: 'public'
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      users: {
+        Row: {
+          id: string
+          ukey: string
+          email: string
+          umail: string | null
+          status: 'pending' | 'active' | 'suspended'
+          role_code: string | null
+          full_name: string
+          position: string | null
+          designation: string | null
+          created_at: string
+          setup_completed_at: string | null
+        }
+      }
     }
     Functions: {
       is_officer: {

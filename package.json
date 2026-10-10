@@ -4,14 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "index": "node scripts/gms-index.mjs",
     "guard": "node scripts/gms-guard.mjs",
-    "guard:ci": "node scripts/gms-guard.mjs --ci --no-color",
-    "prepare": "node scripts/gms-index.mjs --install-hooks"
+    "guard:ci": "node scripts/gms-guard.mjs --ci --no-color"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

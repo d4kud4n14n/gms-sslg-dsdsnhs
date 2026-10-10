@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import WorkspaceMembers from './WorkspaceMembers'
 
@@ -9,7 +9,7 @@ interface Workspace {
   description: string
   chair_ukey: string | null
   is_active: boolean
-  config: any
+  config: Record<string, unknown> | null
 }
 
 export default function WorkspaceManagement() {
@@ -20,12 +20,24 @@ export default function WorkspaceManagement() {
   const [newWorkspace, setNewWorkspace] = useState({ code: '', name: '', description: '', chair_ukey: '' })
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchWorkspaces()
-  }, [])
+  const fetchWorkspaces = useCallback(async () => {
+    const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
+    if (isMockClient) {
+      setWorkspaces([
+        {
+          id: 'ws-001',
+          code: 'EXEC-BOARD',
+          name: 'Executive Board',
+          description: 'Supreme Secondary Learner Government Executive Committee',
+          chair_ukey: 'GMS000',
+          is_active: true,
+          config: {},
+        },
+      ])
+      setLoading(false)
+      return
+    }
 
-  const fetchWorkspaces = async () => {
-    setLoading(true)
     const { data, error } = await supabase
       .from('workspaces')
       .select('*')
@@ -38,7 +50,11 @@ export default function WorkspaceManagement() {
     }
 
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchWorkspaces()
+  }, [fetchWorkspaces])
 
   const createWorkspace = async (e: React.FormEvent) => {
     e.preventDefault()

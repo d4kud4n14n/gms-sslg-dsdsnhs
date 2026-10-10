@@ -1,26 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 interface Env {
   SUPABASE_URL: string
   SUPABASE_SERVICE_ROLE_KEY: string
 }
 
-interface CreateUserBody {
-  email?: string
-  user_metadata?: {
-    full_name?: string
-  }
-  role_code?: string
-  position?: string
-  designation?: string | null
-}
+const allowedRoles = ['ROOT', 'ADMIN', 'PRINCIPAL', 'ADVISER', 'OFFICER', 'STAFF', 'MEMBER'] as const
 
-const allowedRoles = new Set(['ADMIN', 'PRINCIPAL', 'ADVISER', 'OFFICER', 'STAFF', 'MEMBER'])
+const createUserSchema = z.object({
+  email: z.string().trim().email('A valid email address is required.').min(5),
+  user_metadata: z.object({
+    full_name: z.string().trim().min(1, 'Full name is required.'),
+  }).optional(),
+  role_code: z.enum(allowedRoles).default('MEMBER'),
+  position: z.string().trim().optional(),
+  designation: z.string().trim().nullable().optional(),
+})
+
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
+      ...CORS_HEADERS,
       'Cache-Control': 'no-store',
       'Content-Type': 'application/json',
     },
@@ -67,27 +75,30 @@ async function createUserRequest(context: { request: Request; env: Env }) {
   const callerRoleLevel = (callerProfile?.roles as { level?: number; name?: string } | null)?.level ?? 0
   const callerRoleName = (callerProfile?.roles as { level?: number; name?: string } | null)?.name?.toUpperCase() ?? ''
 
-  if (callerError || (callerRoleLevel < 10 && callerRoleName !== 'ADMIN')) {
-    return json({ success: false, error: 'Only ADMIN users can create accounts.' }, 403)
+  if (callerError || (callerRoleLevel < 10 && callerRoleName !== 'ADMIN' && callerRoleName !== 'ROOT')) {
+    return json({ success: false, error: 'Only administrative users can create accounts.' }, 403)
   }
 
-  // 3. Parse input body
-  let body: CreateUserBody
+  // 3. Parse input body with Zod schema validation
+  let rawBody: unknown
   try {
-    body = await context.request.json() as CreateUserBody
+    rawBody = await context.request.json()
   } catch {
     return json({ success: false, error: 'Request body must be valid JSON.' }, 400)
   }
 
-  const imail = body.email?.trim().toLowerCase()
-  const fullName = body.user_metadata?.full_name?.trim()
-  const roleCode = body.role_code?.trim().toUpperCase() || 'MEMBER'
-  const position = body.position?.trim() || 'Member'
-  const designation = body.designation?.trim() || null
-
-  if (!imail || !imail.includes('@') || !fullName || !allowedRoles.has(roleCode)) {
-    return json({ success: false, error: 'Valid IMAIL, full name, and valid role are required.' }, 400)
+  const parseResult = createUserSchema.safeParse(rawBody)
+  if (!parseResult.success) {
+    const errorMsg = parseResult.error.issues[0]?.message || 'Invalid user data provided.'
+    return json({ success: false, error: errorMsg }, 400)
   }
+
+  const body = parseResult.data
+  const imail = body.email.toLowerCase()
+  const fullName = body.user_metadata?.full_name?.trim() || imail.split('@')[0]
+  const roleCode = body.role_code
+  const position = body.position || 'Member'
+  const designation = body.designation || null
 
   const temporaryPassword = generateTemporaryPassword()
 
@@ -144,26 +155,29 @@ async function createUserRequest(context: { request: Request; env: Env }) {
   })
 }
 
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  })
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }) {
   try {
     return await createUserRequest(context)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error.'
-    console.error('create-user failed:', error)
+    console.error('Account creation dispatch failed')
     return json({ success: false, error: message }, 500)
   }
 }
 
 export async function onRequest(context: { request: Request; env: Env }) {
-  try {
-    if (context.request.method !== 'POST') {
-      return json({ success: false, error: 'Method not allowed.' }, 405)
-    }
-
-    return await onRequestPost(context)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error.'
-    console.error('create-user request failed:', error)
-    return json({ success: false, error: message }, 500)
+  if (context.request.method === 'OPTIONS') {
+    return onRequestOptions()
   }
+  if (context.request.method !== 'POST') {
+    return json({ success: false, error: 'Method not allowed.' }, 405)
+  }
+  return await onRequestPost(context)
 }

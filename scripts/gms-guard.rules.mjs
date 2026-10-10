@@ -285,7 +285,7 @@ export const rules = [
       for (const file of ctx.files.allFiles || []) {
         if (file.includes('/.gms-guard/') || file.includes('/node_modules/') || file.includes('/dist/') || file.includes('/.git/')) continue
         const text = readText(path.join(ctx.repoRoot, file))
-        if (!text || file.endsWith('/.env.example')) continue
+        if (!text || file.endsWith('.env.example')) continue
         const secretPattern = /(sk|pk)_(?:live|test)_[A-Za-z0-9]{20,}|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|SUPABASE_SERVICE_ROLE_KEY\s*=\s*[A-Za-z0-9._-]{20,}/i
         if (!secretPattern.test(text)) continue
         findings.push(

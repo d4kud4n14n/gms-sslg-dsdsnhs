@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
@@ -55,15 +55,7 @@ export default function MeetingDetail() {
   const [resolutionError, setResolutionError] = useState('')
   const [currentUserUkey, setCurrentUserUkey] = useState('')
 
-  useEffect(() => {
-    if (!id) return
-    fetchData()
-  }, [id])
-
-  const fetchData = async () => {
-    setLoading(true)
-    setError('')
-
+  const fetchData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.user_metadata?.ukey) {
@@ -104,13 +96,19 @@ export default function MeetingDetail() {
 
       if (resolutionsError) throw resolutionsError
       setResolutions(resolutionsData || [])
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch meeting data'
+      setError(message)
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    fetchData()
+  }, [id, fetchData])
 
   const updateMeetingStatus = async (status: string) => {
     if (!meeting) return

@@ -5,6 +5,7 @@ interface RoleWidgetsProps {
 }
 
 const roleTitles: Record<string, string> = {
+  ROOT: 'Sovereign Root Administration',
   ADMIN: 'System Administration',
   PRINCIPAL: 'School Leadership',
   ADVISER: 'Advisory Review',
@@ -15,7 +16,7 @@ const roleTitles: Record<string, string> = {
 export default function RoleWidgets({ roleCode, meetings, resolutions }: RoleWidgetsProps) {
   const normalizedRole = roleCode || 'STAFF'
 
-  if (normalizedRole === 'ADMIN') {
+  if (normalizedRole === 'ADMIN' || normalizedRole === 'ROOT') {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

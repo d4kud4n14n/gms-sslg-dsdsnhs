@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 interface User {
@@ -39,12 +39,24 @@ export default function UserManagement() {
   })
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
+  const fetchUsers = useCallback(async () => {
+    const isMockClient = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('mock.supabase.co')
+    if (isMockClient) {
+      setUsers([
+        {
+          ukey: 'GMS000',
+          email: 'root@gms.internal',
+          full_name: 'System Root Administrator',
+          role_code: 'ROOT',
+          position: 'System Root',
+          designation: 'Lead Technical Administrator',
+          created_at: new Date().toISOString(),
+        },
+      ])
+      setLoading(false)
+      return
+    }
 
-  const fetchUsers = async () => {
-    setLoading(true)
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -55,7 +67,11 @@ export default function UserManagement() {
       setUsers(data || [])
     }
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const updateRole = async (ukey: string, newRole: string) => {
     const { error } = await supabase
@@ -130,6 +146,13 @@ export default function UserManagement() {
           designation: newUser.designation.trim() || null,
         }),
       })
+
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        setError('Server returned an unexpected response format.')
+        return
+      }
+
       const result = await response.json() as { success?: boolean; ukey?: string; tempPassword?: string; error?: string }
 
       if (!response.ok || !result.success) {
@@ -274,6 +297,7 @@ export default function UserManagement() {
                     onChange={(e) => updateRole(user.ukey, e.target.value)}
                     className="border rounded px-2 py-1 text-sm"
                   >
+                    <option value="ROOT">Root</option>
                     <option value="ADMIN">Admin</option>
                     <option value="PRINCIPAL">Principal</option>
                     <option value="ADVISER">Adviser</option>
@@ -338,6 +362,7 @@ export default function UserManagement() {
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="STAFF">Staff</option>
+                  <option value="ROOT">Root</option>
                   <option value="ADMIN">Admin</option>
                   <option value="PRINCIPAL">Principal</option>
                   <option value="ADVISER">Adviser</option>
@@ -412,6 +437,7 @@ export default function UserManagement() {
                   onChange={(e) => setEditForm({ ...editForm, role_code: e.target.value })}
                   className="w-full border rounded px-3 py-2"
                 >
+                  <option value="ROOT">Root</option>
                   <option value="ADMIN">Admin</option>
                   <option value="PRINCIPAL">Principal</option>
                   <option value="ADVISER">Adviser</option>
