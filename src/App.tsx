@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase, isMockClient } from './lib/supabase'
+import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
@@ -93,9 +93,6 @@ function App() {
 
   // Route Guard: Protected application routes requiring active setup
   const requireActive = (element: React.ReactElement) => {
-    if (isMockClient) {
-      return element
-    }
     if (!session) {
       return <Navigate to="/login" replace />
     }
@@ -107,9 +104,6 @@ function App() {
 
   // Route Guard: Setup route requiring authentication, but only accessible if setup incomplete
   const renderSetup = () => {
-    if (isMockClient) {
-      return <Setup onSetupComplete={() => setIsSetupComplete(true)} />
-    }
     if (!session) {
       return <Navigate to="/login" replace />
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import Icon from '../components/Icon'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 
 interface UserProfile {
   ukey: string
@@ -37,21 +37,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          if (isMockClient) {
-            setProfile({
-              ukey: 'GMS000',
-              full_name: 'System Root Administrator',
-              email: 'root@gms.internal',
-              role_code: 'ROOT',
-              position: 'System Root',
-              designation: 'Lead Technical Administrator',
-            })
-            setLoading(false)
-            return
-          }
-          return
-        }
+        if (!user) return
 
         let ukey = user.user_metadata?.ukey
         if (!ukey) {

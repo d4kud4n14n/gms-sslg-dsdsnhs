@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 
 interface User {
   ukey: string
@@ -14,16 +14,6 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
   const [error, setError] = useState('')
 
   const fetchData = useCallback(async () => {
-    if (isMockClient) {
-      const mockUsers: User[] = [
-        { ukey: 'GMS000', full_name: 'System Root Administrator', email: 'root@gms.internal' },
-      ]
-      setAllUsers(mockUsers)
-      setMembers(mockUsers)
-      setLoading(false)
-      return
-    }
-
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('ukey, full_name, email')
@@ -59,15 +49,6 @@ export default function WorkspaceMembers({ workspaceId, workspaceCode, onClose }
 
   const toggleMember = async (userUkey: string, isCurrentlyMember: boolean) => {
     setError('')
-    if (isMockClient) {
-      if (isCurrentlyMember) {
-        setMembers((prev) => prev.filter((m) => m.ukey !== userUkey))
-      } else {
-        const user = allUsers.find((u) => u.ukey === userUkey)
-        if (user) setMembers((prev) => [...prev, user])
-      }
-      return
-    }
 
     if (isCurrentlyMember) {
       const { error: removeError } = await supabase

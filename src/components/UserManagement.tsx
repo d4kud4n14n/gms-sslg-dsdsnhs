@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 
 interface User {
   ukey: string
@@ -41,26 +41,6 @@ export default function UserManagement() {
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
-    if (isMockClient) {
-      setUsers((current) =>
-        current.length > 0
-          ? current
-          : [
-              {
-                ukey: 'GMS000',
-                email: 'root@gms.internal',
-                full_name: 'System Root Administrator',
-                role_code: 'ROOT',
-                position: 'System Root',
-                designation: 'Lead Technical Administrator',
-                created_at: new Date().toISOString(),
-              },
-            ],
-      )
-      setLoading(false)
-      return
-    }
-
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -79,10 +59,6 @@ export default function UserManagement() {
 
   const updateRole = async (ukey: string, newRole: string) => {
     setError('')
-    if (isMockClient) {
-      setUsers(users.map(u => u.ukey === ukey ? { ...u, role_code: newRole } : u))
-      return
-    }
     const { error: roleError } = await supabase
       .from('users')
       .update({ role_code: newRole })
@@ -136,7 +112,7 @@ export default function UserManagement() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token && !isMockClient) {
+      if (!session?.access_token) {
         setError('Your session has expired. Please sign in again.')
         return
       }
@@ -144,7 +120,7 @@ export default function UserManagement() {
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${session?.access_token || 'dev-mock-token'}`,
+          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -169,25 +145,7 @@ export default function UserManagement() {
         return
       }
 
-      if (isMockClient) {
-        const nextUkey = result.ukey === 'GMS-DEV'
-          ? `GMS${String(users.length + 1).padStart(3, '0')}`
-          : (result.ukey || 'GMS-DEV')
-        setUsers((current) => [
-          ...current,
-          {
-            ukey: nextUkey,
-            email: trimmedEmail,
-            full_name: newUser.full_name.trim(),
-            role_code: newUser.role_code,
-            position: trimmedPosition,
-            designation: newUser.designation.trim() || null,
-            created_at: new Date().toISOString(),
-          },
-        ])
-      } else {
-        await fetchUsers()
-      }
+      await fetchUsers()
       setShowModal(false)
       setNewUser({ email: '', full_name: '', role_code: 'STAFF', position: '', designation: '' })
       if (result.ukey && result.tempPassword) {
@@ -222,48 +180,28 @@ export default function UserManagement() {
       return
     }
 
-    if (!isMockClient) {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          full_name: editForm.full_name.trim(),
-          role_code: editForm.role_code,
-          position: trimmedPosition,
-          designation: editForm.designation.trim() || null,
-        })
-        .eq('ukey', editingUser.ukey)
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        full_name: editForm.full_name.trim(),
+        role_code: editForm.role_code,
+        position: trimmedPosition,
+        designation: editForm.designation.trim() || null,
+      })
+      .eq('ukey', editingUser.ukey)
 
-      if (updateError) {
-        setError('Failed to update user: ' + updateError.message)
-        return
-      }
+    if (updateError) {
+      setError('Failed to update user: ' + updateError.message)
+      return
     }
 
-    setUsers((current) =>
-      current.map((user) =>
-        user.ukey === editingUser.ukey
-          ? {
-              ...user,
-              full_name: editForm.full_name.trim(),
-              role_code: editForm.role_code,
-              position: trimmedPosition,
-              designation: editForm.designation.trim() || null,
-            }
-          : user,
-      ),
-    )
+    await fetchUsers()
     setShowEditModal(false)
     setEditingUser(null)
   }
 
   const deleteUser = async (user: User) => {
     setError('')
-
-    if (isMockClient) {
-      setUsers((current) => current.filter((item) => item.ukey !== user.ukey))
-      setConfirmDeleteUser(null)
-      return
-    }
 
     try {
       const { data: deletedUsers, error: deleteError } = await supabase

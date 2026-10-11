@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import UserManagement from '../components/UserManagement'
 import WorkspaceManagement from '../components/WorkspaceManagement'
 import Layout from '../components/Layout'
@@ -15,11 +15,6 @@ export default function SYSVER() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        if (isMockClient) {
-          setIsAdmin(true)
-          setLoading(false)
-          return
-        }
         navigate('/login')
         setLoading(false)
         return

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { completeSetup, umailSchema, passwordSchema, type Profile } from '../lib/profile'
 
 interface SetupProps {
@@ -35,21 +35,6 @@ export default function Setup({ onSetupComplete }: SetupProps) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        if (isMockClient) {
-          setImail('root@gms.internal')
-          setProfile({
-            id: '00000000-0000-0000-0000-000000000001',
-            ukey: 'GMS000',
-            imail: 'root@gms.internal',
-            umail: null,
-            role_id: '00000000-0000-0000-0000-000000000001',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            setup_completed_at: null,
-          })
-          setLoading(false)
-          return
-        }
         navigate('/login')
         return
       }
@@ -102,14 +87,6 @@ export default function Setup({ onSetupComplete }: SetupProps) {
     }
 
     setSubmitting(true)
-
-    if (isMockClient) {
-      if (onSetupComplete) {
-        onSetupComplete()
-      }
-      navigate('/dashboard')
-      return
-    }
 
     try {
       const { data, error: completeError } = await completeSetup({

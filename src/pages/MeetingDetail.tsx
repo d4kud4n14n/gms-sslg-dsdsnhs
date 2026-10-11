@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 interface Meeting {
@@ -57,36 +57,6 @@ export default function MeetingDetail() {
   const [currentUserUkey, setCurrentUserUkey] = useState('')
 
   const fetchData = useCallback(async () => {
-    if (isMockClient) {
-      setCurrentUserUkey('GMS000')
-      const mockMeeting: Meeting = {
-        id: id || 'meet-001',
-        title: 'SSLG Regular General Assembly',
-        agenda: 'Review of Quarter 1 Student Projects and Budget Allocation',
-        scheduled_at: new Date(Date.now() + 86400000 * 3).toISOString(),
-        status: 'scheduled',
-        minutes: '',
-        quorum_required: 1,
-        created_by: 'GMS000',
-        created_at: new Date().toISOString(),
-      }
-      setMeeting((current) => current ?? mockMeeting)
-      setUsers([
-        {
-          ukey: 'GMS000',
-          full_name: 'System Root Administrator',
-          email: 'root@gms.internal',
-        },
-      ])
-      setAttendance((current) =>
-        current.length > 0
-          ? current
-          : [{ user_ukey: 'GMS000', status: 'present', attended_at: new Date().toISOString() }],
-      )
-      setLoading(false)
-      return
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.user_metadata?.ukey) {
@@ -145,11 +115,6 @@ export default function MeetingDetail() {
     if (!meeting) return
     setActionError('')
 
-    if (isMockClient) {
-      setMeeting({ ...meeting, status })
-      return
-    }
-
     const { error: statusError } = await supabase
       .from('meetings')
       .update({ status })
@@ -165,12 +130,6 @@ export default function MeetingDetail() {
   const updateMinutes = async () => {
     if (!meeting) return
     setActionError('')
-
-    if (isMockClient) {
-      setMeeting({ ...meeting, minutes: minutesText })
-      setEditingMinutes(false)
-      return
-    }
 
     const { error: minutesError } = await supabase
       .from('meetings')
@@ -188,28 +147,6 @@ export default function MeetingDetail() {
   const toggleAttendance = async (userUkey: string, status: string) => {
     setActionError('')
     const existing = attendance.find((a) => a.user_ukey === userUkey)
-
-    if (isMockClient) {
-      if (existing) {
-        setAttendance((prev) =>
-          prev.map((a) =>
-            a.user_ukey === userUkey
-              ? { ...a, status, attended_at: status === 'present' ? new Date().toISOString() : null }
-              : a,
-          ),
-        )
-      } else {
-        setAttendance((prev) => [
-          ...prev,
-          {
-            user_ukey: userUkey,
-            status,
-            attended_at: status === 'present' ? new Date().toISOString() : null,
-          },
-        ])
-      }
-      return
-    }
 
     if (existing) {
       const { error: attError } = await supabase
@@ -264,26 +201,6 @@ export default function MeetingDetail() {
 
     if (!meeting) return
 
-    if (isMockClient) {
-      setResolutions((prev) => [
-        {
-          id: `res-${Date.now()}`,
-          title: newResolution.title,
-          description: newResolution.description,
-          proposed_by: currentUserUkey || 'GMS000',
-          status: 'proposed',
-          votes_for: 0,
-          votes_against: 0,
-          votes_abstain: 0,
-          created_at: new Date().toISOString(),
-        },
-        ...prev,
-      ])
-      setShowResolutionModal(false)
-      setNewResolution({ title: '', description: '' })
-      return
-    }
-
     const { error: createError } = await supabase
       .from('resolutions')
       .insert([
@@ -307,10 +224,6 @@ export default function MeetingDetail() {
 
   const updateResolutionStatus = async (resolutionId: string, status: string) => {
     setActionError('')
-    if (isMockClient) {
-      setResolutions((prev) => prev.map((r) => (r.id === resolutionId ? { ...r, status } : r)))
-      return
-    }
 
     const { error: resUpdateError } = await supabase
       .from('resolutions')

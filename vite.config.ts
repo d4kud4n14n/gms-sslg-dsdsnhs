@@ -53,17 +53,6 @@ function isRealSupabaseUrl(url: string | undefined): boolean {
   )
 }
 
-function isRealSecretKey(key: string | undefined): boolean {
-  if (!key) return false
-  const trimmed = key.trim()
-  return (
-    trimmed.length > 20 &&
-    !trimmed.includes('•') &&
-    !trimmed.toLowerCase().startsWith('your-') &&
-    !trimmed.toLowerCase().startsWith('your_')
-  )
-}
-
 function registerApiMiddlewares(
   middlewares: Connect.Server,
   env: Record<string, string>,
@@ -73,11 +62,6 @@ function registerApiMiddlewares(
     : isRealSupabaseUrl(env.VITE_SUPABASE_URL)
       ? env.VITE_SUPABASE_URL
       : ''
-
-  const hasLiveBackend = Boolean(
-    effectiveSupabaseUrl &&
-    isRealSecretKey(env.SUPABASE_SERVICE_ROLE_KEY),
-  )
 
   middlewares.use('/api/runtime-config', async (req, res) => {
     try {
@@ -100,92 +84,45 @@ function registerApiMiddlewares(
   })
 
   middlewares.use('/api/create-user', async (req, res) => {
-    if (hasLiveBackend) {
-      try {
-        const request = await toWebRequest(req)
-        const response = await onCreateUserRequest({
-          request,
-          env: {
-            SUPABASE_URL: effectiveSupabaseUrl,
-            SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-          },
-        })
-        await sendWebResponse(res, response)
-        return
-      } catch {
-        res.statusCode = 500
-        res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ success: false, error: 'Internal server error.' }))
-        return
-      }
-    }
-
-    if (req.method === 'OPTIONS') {
-      res.statusCode = 204
-      res.setHeader('Access-Control-Allow-Origin', '*')
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-      res.end()
-      return
-    }
-    if (req.method === 'POST') {
+    try {
+      const request = await toWebRequest(req)
+      const response = await onCreateUserRequest({
+        request,
+        env: {
+          SUPABASE_URL: effectiveSupabaseUrl,
+          SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
+        },
+      })
+      await sendWebResponse(res, response)
+    } catch {
+      res.statusCode = 500
       res.setHeader('Content-Type', 'application/json')
-      res.end(JSON.stringify({
-        success: true,
-        ukey: 'GMS-DEV',
-        tempPassword: 'temp-dev-password-123',
-      }))
-      return
+      res.end(JSON.stringify({ success: false, error: 'Internal server error.' }))
     }
-    res.statusCode = 405
-    res.end()
   })
 
   middlewares.use('/api/recover-umail', async (req, res) => {
-    if (hasLiveBackend) {
-      try {
-        const request = await toWebRequest(req)
-        const response = await onRecoverUmailRequest({
-          request,
-          env: {
-            SUPABASE_URL: effectiveSupabaseUrl,
-            SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-            RESEND_API_KEY: env.RESEND_API_KEY,
-            MAIL_FROM: env.MAIL_FROM,
-            APP_URL: env.APP_URL,
-          },
-        })
-        await sendWebResponse(res, response)
-        return
-      } catch {
-        res.statusCode = 200
-        res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({
-          success: true,
-          message: 'If an active account is associated with that contact email, a password recovery link has been sent.',
-        }))
-        return
-      }
-    }
-
-    if (req.method === 'OPTIONS') {
-      res.statusCode = 204
-      res.setHeader('Access-Control-Allow-Origin', '*')
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-      res.end()
-      return
-    }
-    if (req.method === 'POST') {
+    try {
+      const request = await toWebRequest(req)
+      const response = await onRecoverUmailRequest({
+        request,
+        env: {
+          SUPABASE_URL: effectiveSupabaseUrl,
+          SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
+          RESEND_API_KEY: env.RESEND_API_KEY,
+          MAIL_FROM: env.MAIL_FROM,
+          APP_URL: env.APP_URL,
+        },
+      })
+      await sendWebResponse(res, response)
+    } catch {
+      res.statusCode = 200
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({
         success: true,
         message: 'If an active account is associated with that contact email, a password recovery link has been sent.',
       }))
-      return
     }
-    res.statusCode = 405
-    res.end()
   })
 }
 

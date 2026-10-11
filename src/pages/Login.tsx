@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { Eye, EyeOff, Mail, Lock, LogIn, Users } from 'lucide-react'
 import logo from '../assets/logo-sslg.png'
 
@@ -19,19 +19,6 @@ export default function Login() {
 
     const normalizedImail = imail.trim().toLowerCase()
 
-    if (isMockClient && normalizedImail === 'root@gms.internal') {
-      if (password === 'RootDev2026!') {
-        // Enforce temporary password flow to /setup
-        navigate('/setup')
-        setLoading(false)
-        return
-      } else {
-        setError('Invalid temporary password. Default development password is RootDev2026!')
-        setLoading(false)
-        return
-      }
-    }
-
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: normalizedImail,
@@ -39,11 +26,7 @@ export default function Login() {
       })
 
       if (authError || !authData.user) {
-        if (isMockClient || authError?.message?.includes('fetch') || authError?.message?.includes('Failed to fetch')) {
-          setError('Live database not reachable. Please execute the SQL migration in Supabase or use root@gms.internal.')
-        } else {
-          setError('Invalid email or password.')
-        }
+        setError('Invalid email or password.')
         setLoading(false)
         return
       }
@@ -61,7 +44,7 @@ export default function Login() {
 
       navigate('/dashboard')
     } catch {
-      setError('Unable to reach authentication service. Please check your database connection.')
+      setError('Unable to reach authentication service. Please check your network connection.')
     } finally {
       setLoading(false)
     }

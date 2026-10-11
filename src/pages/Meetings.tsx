@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 interface Meeting {
@@ -28,27 +28,6 @@ export default function Meetings() {
   const [error, setError] = useState('')
 
   const fetchMeetings = useCallback(async () => {
-    if (isMockClient) {
-      setMeetings((current) =>
-        current.length > 0
-          ? current
-          : [
-              {
-                id: 'meet-001',
-                title: 'SSLG Regular General Assembly',
-                agenda: 'Review of Quarter 1 Student Projects and Budget Allocation',
-                scheduled_at: new Date(Date.now() + 86400000 * 3).toISOString(),
-                status: 'scheduled',
-                minutes: '',
-                created_by: 'GMS000',
-                created_at: new Date().toISOString(),
-              },
-            ],
-      )
-      setLoading(false)
-      return
-    }
-
     const { data, error } = await supabase
       .from('meetings')
       .select('*')
@@ -70,25 +49,6 @@ export default function Meetings() {
   const createMeeting = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    if (isMockClient) {
-      setMeetings((current) => [
-        {
-          id: `meet-${Date.now()}`,
-          title: newMeeting.title,
-          agenda: newMeeting.agenda,
-          scheduled_at: newMeeting.scheduled_at || new Date().toISOString(),
-          status: 'scheduled',
-          minutes: '',
-          created_by: 'GMS000',
-          created_at: new Date().toISOString(),
-        },
-        ...current,
-      ])
-      setShowModal(false)
-      setNewMeeting({ title: '', agenda: '', scheduled_at: '', quorum_required: 1 })
-      return
-    }
 
     const { data: { user } } = await supabase.auth.getUser()
     const ukey = user?.user_metadata?.ukey || 'GMS000'

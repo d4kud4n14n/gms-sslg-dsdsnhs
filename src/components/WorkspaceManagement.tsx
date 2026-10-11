@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, isMockClient } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import WorkspaceMembers from './WorkspaceMembers'
 
 interface Workspace {
@@ -21,26 +21,6 @@ export default function WorkspaceManagement() {
   const [error, setError] = useState('')
 
   const fetchWorkspaces = useCallback(async () => {
-    if (isMockClient) {
-      setWorkspaces((current) =>
-        current.length > 0
-          ? current
-          : [
-              {
-                id: 'ws-001',
-                code: 'EXEC-BOARD',
-                name: 'Executive Board',
-                description: 'Supreme Secondary Learner Government Executive Committee',
-                chair_ukey: 'GMS000',
-                is_active: true,
-                config: {},
-              },
-            ],
-      )
-      setLoading(false)
-      return
-    }
-
     const { data, error } = await supabase
       .from('workspaces')
       .select('*')
@@ -65,24 +45,6 @@ export default function WorkspaceManagement() {
 
     const { code, name, description, chair_ukey } = newWorkspace
 
-    if (isMockClient) {
-      setWorkspaces((current) => [
-        ...current,
-        {
-          id: `ws-${Date.now()}`,
-          code,
-          name,
-          description,
-          chair_ukey: chair_ukey || null,
-          is_active: true,
-          config: {},
-        },
-      ])
-      setShowModal(false)
-      setNewWorkspace({ code: '', name: '', description: '', chair_ukey: '' })
-      return
-    }
-
     const { error } = await supabase
       .from('workspaces')
       .insert([
@@ -105,13 +67,6 @@ export default function WorkspaceManagement() {
   }
 
   const toggleActive = async (id: string, current: boolean) => {
-    if (isMockClient) {
-      setWorkspaces((items) =>
-        items.map((ws) => (ws.id === id ? { ...ws, is_active: !current } : ws)),
-      )
-      return
-    }
-
     const { error } = await supabase
       .from('workspaces')
       .update({ is_active: !current })
